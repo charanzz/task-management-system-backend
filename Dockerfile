@@ -4,12 +4,11 @@ WORKDIR /app
 
 COPY . .
 
-# 🔥 Give execute permission to mvnw
+# Give permission to mvnw
 RUN chmod +x mvnw
 
-# Build the jar
+# Build jar
 RUN ./mvnw clean package -DskipTests
 
-EXPOSE 8080
-
+# IMPORTANT: Do NOT hardcode port
 CMD ["sh", "-c", "java -jar target/*.jar --server.port=$PORT"]
