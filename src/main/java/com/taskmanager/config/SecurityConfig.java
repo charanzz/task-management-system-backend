@@ -14,7 +14,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -69,9 +69,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of(
-        		 "http://localhost:5173",
-        		    "https://task-management-frontend-sepia.vercel.app"
-        		   
+            "https://task-management-frontend-sepia.vercel.app"
         ));
 
         configuration.setAllowedMethods(List.of(
