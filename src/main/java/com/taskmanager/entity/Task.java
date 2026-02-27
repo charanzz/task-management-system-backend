@@ -2,7 +2,6 @@ package com.taskmanager.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -14,7 +13,6 @@ public class Task {
     private Long id;
 
     private String title;
-
     private String description;
 
     @Enumerated(EnumType.STRING)
@@ -23,11 +21,10 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private TaskPriority priority;
 
+    private LocalDateTime dueDate;
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
-
-    private LocalDateTime completedAt;   // ✅ NEW FIELD
+    private LocalDateTime completedAt;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -36,7 +33,17 @@ public class Task {
 
     public Task() {}
 
-    // Getters & Setters
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (status == null) status = TaskStatus.TODO;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     public Long getId() { return id; }
 
@@ -51,6 +58,9 @@ public class Task {
 
     public TaskPriority getPriority() { return priority; }
     public void setPriority(TaskPriority priority) { this.priority = priority; }
+
+    public LocalDateTime getDueDate() { return dueDate; }
+    public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
