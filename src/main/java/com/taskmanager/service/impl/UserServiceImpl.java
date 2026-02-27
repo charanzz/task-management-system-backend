@@ -23,6 +23,11 @@ public class UserServiceImpl implements UserService {
     // ================= REGISTER =================
     @Override
     public User registerUser(User user) {
+    	
+    	 // Check if email already exists
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already registered");
+        }
 
         // encode password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -52,4 +57,5 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
+    
 }

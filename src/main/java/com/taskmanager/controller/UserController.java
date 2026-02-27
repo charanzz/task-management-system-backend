@@ -31,16 +31,32 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest request) {
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
-        user.setRole(Role.USER);
-        User saved = userService.registerUser(user);
-        return ResponseEntity.ok(Map.of(
-            "message", "User registered successfully",
-            "email", saved.getEmail()
-        ));
+        try {
+            if (request.getName() == null || request.getName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Name is required"));
+            }
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Email is required"));
+            }
+            if (request.getPassword() == null || request.getPassword().length() < 6) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Password must be at least 6 characters"));
+            }
+
+            User user = new User();
+            user.setName(request.getName().trim());
+            user.setEmail(request.getEmail().trim());
+            user.setPassword(request.getPassword());
+            user.setRole(Role.USER);
+
+            User saved = userService.registerUser(user);
+            return ResponseEntity.ok(Map.of(
+                "message", "User registered successfully",
+                "email", saved.getEmail(),
+                "name", saved.getName()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PostMapping("/login")
