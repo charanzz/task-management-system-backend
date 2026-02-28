@@ -5,6 +5,7 @@ import com.taskmanager.entity.Task;
 import com.taskmanager.entity.TaskPriority;
 import com.taskmanager.entity.TaskStatus;
 import com.taskmanager.repository.TaskRepository;
+import com.taskmanager.service.GamificationService;
 import com.taskmanager.service.TaskService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,9 +18,11 @@ import java.util.List;
 public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
+    private final GamificationService gamificationService;
 
-    public TaskServiceImpl(TaskRepository taskRepository) {
+    public TaskServiceImpl(TaskRepository taskRepository, GamificationService gamificationService) {
         this.taskRepository = taskRepository;
+        this.gamificationService = gamificationService;
     }
 
     @Override
@@ -45,7 +48,13 @@ public class TaskServiceImpl implements TaskService {
             task.setCompletedAt(LocalDateTime.now());
         }
 
-        return taskRepository.save(task);
+        Task saved = taskRepository.save(task);
+
+        if (updatedTask.getStatus() == TaskStatus.DONE) {
+            gamificationService.checkAndAwardBadges(task.getUser());
+        }
+
+        return saved;
     }
 
     @Override
@@ -82,9 +91,9 @@ public class TaskServiceImpl implements TaskService {
             if (task.getStatus() == TaskStatus.DONE) {
                 completed++;
                 switch (task.getPriority()) {
-                    case HIGH -> score += 30;
+                    case HIGH   -> score += 30;
                     case MEDIUM -> score += 20;
-                    case LOW -> score += 10;
+                    case LOW    -> score += 10;
                 }
             }
         }

@@ -3,10 +3,11 @@ package com.taskmanager.controller;
 import com.taskmanager.dto.LoginRequest;
 import com.taskmanager.dto.RegisterRequest;
 import com.taskmanager.dto.UserStats;
-import com.taskmanager.entity.User;
 import com.taskmanager.entity.Role;
-import com.taskmanager.service.UserService;
+import com.taskmanager.entity.User;
+import com.taskmanager.service.GamificationService;
 import com.taskmanager.service.TaskService;
+import com.taskmanager.service.UserService;
 import com.taskmanager.config.JwtUtil;
 
 import org.springframework.http.ResponseEntity;
@@ -22,11 +23,16 @@ public class UserController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final TaskService taskService;
+    private final GamificationService gamificationService;
 
-    public UserController(UserService userService, JwtUtil jwtUtil, TaskService taskService) {
+    public UserController(UserService userService,
+                          JwtUtil jwtUtil,
+                          TaskService taskService,
+                          GamificationService gamificationService) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.taskService = taskService;
+        this.gamificationService = gamificationService;
     }
 
     @PostMapping("/register")
@@ -61,10 +67,7 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        User user = userService.login(
-                request.getEmail(),
-                request.getPassword()
-        );
+        User user = userService.login(request.getEmail(), request.getPassword());
         String token = jwtUtil.generateToken(user.getEmail());
         return ResponseEntity.ok(Map.of(
             "token", token,
@@ -89,6 +92,24 @@ public class UserController {
         User user = userService.getUserByEmail(principal.getName());
         UserStats stats = taskService.getUserStats(user.getId());
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/badges")
+    public ResponseEntity<?> getMyBadges(Principal principal) {
+        User user = userService.getUserByEmail(principal.getName());
+        return ResponseEntity.ok(gamificationService.getUserBadges(user.getId()));
+    }
+
+    @GetMapping("/level")
+    public ResponseEntity<?> getMyLevel(Principal principal) {
+        User user = userService.getUserByEmail(principal.getName());
+        UserStats stats = taskService.getUserStats(user.getId());
+        int level = gamificationService.getUserLevel(stats.getFocusScore());
+        return ResponseEntity.ok(Map.of(
+            "level", level,
+            "focusScore", stats.getFocusScore(),
+            "nextLevelAt", level < 10 ? (level * 100) : 1000
+        ));
     }
 
     @GetMapping("/test")
