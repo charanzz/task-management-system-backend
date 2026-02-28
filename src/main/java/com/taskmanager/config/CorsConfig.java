@@ -22,18 +22,20 @@ public class CorsConfig {
 
         if ("*".equals(allowedOrigins.trim())) {
             configuration.addAllowedOriginPattern("*");
+            configuration.setAllowCredentials(false); // ← MUST be false with wildcard
         } else {
             Arrays.stream(allowedOrigins.split(","))
                   .map(String::trim)
                   .filter(s -> !s.isEmpty())
                   .forEach(configuration::addAllowedOrigin);
+            configuration.setAllowCredentials(true);
         }
 
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
         ));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
