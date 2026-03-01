@@ -7,6 +7,7 @@ import com.taskmanager.entity.TaskStatus;
 import com.taskmanager.repository.TaskRepository;
 import com.taskmanager.service.GamificationService;
 import com.taskmanager.service.TaskService;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,15 +15,14 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.context.annotation.Lazy;
-
 @Service
 public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final GamificationService gamificationService;
 
-    public TaskServiceImpl(TaskRepository taskRepository, @Lazy GamificationService gamificationService) {
+    public TaskServiceImpl(TaskRepository taskRepository,
+                           @Lazy GamificationService gamificationService) {
         this.taskRepository = taskRepository;
         this.gamificationService = gamificationService;
     }
@@ -52,8 +52,13 @@ public class TaskServiceImpl implements TaskService {
 
         Task saved = taskRepository.save(task);
 
+        // Check badges after completing a task
         if (updatedTask.getStatus() == TaskStatus.DONE) {
-            gamificationService.checkAndAwardBadges(task.getUser());
+            try {
+                gamificationService.checkAndAwardBadges(task.getUser());
+            } catch (Exception e) {
+                System.err.println("Badge check failed: " + e.getMessage());
+            }
         }
 
         return saved;

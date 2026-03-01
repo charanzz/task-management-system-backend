@@ -5,6 +5,7 @@ import com.taskmanager.dto.RegisterRequest;
 import com.taskmanager.dto.UserStats;
 import com.taskmanager.entity.Role;
 import com.taskmanager.entity.User;
+import com.taskmanager.service.EmailService;
 import com.taskmanager.service.GamificationService;
 import com.taskmanager.service.TaskService;
 import com.taskmanager.service.UserService;
@@ -24,15 +25,18 @@ public class UserController {
     private final JwtUtil jwtUtil;
     private final TaskService taskService;
     private final GamificationService gamificationService;
+    private final EmailService emailService;
 
     public UserController(UserService userService,
                           JwtUtil jwtUtil,
                           TaskService taskService,
-                          GamificationService gamificationService) {
+                          GamificationService gamificationService,
+                          EmailService emailService) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.taskService = taskService;
         this.gamificationService = gamificationService;
+        this.emailService = emailService;
     }
 
     @PostMapping("/register")
@@ -110,6 +114,17 @@ public class UserController {
             "focusScore", stats.getFocusScore(),
             "nextLevelAt", level < 10 ? (level * 100) : 1000
         ));
+    }
+
+    @GetMapping("/test-email")
+    public ResponseEntity<?> testEmail(Principal principal) {
+        try {
+            User user = userService.getUserByEmail(principal.getName());
+            emailService.sendBadgeEmail(user, "Test Badge", "🧪");
+            return ResponseEntity.ok(Map.of("message", "Test email sent to " + user.getEmail()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/test")
