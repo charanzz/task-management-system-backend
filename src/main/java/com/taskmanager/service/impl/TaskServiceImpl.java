@@ -14,13 +14,15 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.context.annotation.Lazy;
+
 @Service
 public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final GamificationService gamificationService;
 
-    public TaskServiceImpl(TaskRepository taskRepository, GamificationService gamificationService) {
+    public TaskServiceImpl(TaskRepository taskRepository, @Lazy GamificationService gamificationService) {
         this.taskRepository = taskRepository;
         this.gamificationService = gamificationService;
     }
