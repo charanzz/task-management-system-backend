@@ -22,6 +22,13 @@ public class User {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
+    
+    @Column(name = "focus_score", nullable = false)
+    private Integer focusScore = 0;
+
+    @Column(name = "streak", nullable = false)  
+    private Integer streak = 0;
+
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -48,4 +55,10 @@ public class User {
 
     public List<Task> getTasks() { return tasks; }
     public void setTasks(List<Task> tasks) { this.tasks = tasks; }
+    
+    public Integer getFocusScore() { return focusScore != null ? focusScore : 0; }
+    public void setFocusScore(Integer focusScore) { this.focusScore = focusScore; }
+
+    public Integer getStreak() { return streak != null ? streak : 0; }
+    public void setStreak(Integer streak) { this.streak = streak; }
 }
