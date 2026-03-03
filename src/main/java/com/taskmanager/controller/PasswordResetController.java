@@ -1,5 +1,5 @@
 package com.taskmanager.controller;
-
+import jakarta.transaction.Transactional;
 import com.taskmanager.entity.PasswordResetToken;
 import com.taskmanager.entity.User;
 import com.taskmanager.repository.PasswordResetTokenRepository;
@@ -32,7 +32,8 @@ public class PasswordResetController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // POST /api/auth/forgot-password  { "email": "user@example.com" }
+    // POST /api/auth/forgot-password  { "email": "user@example.com"
+    @Transactional
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
         String email = body.get("email");
