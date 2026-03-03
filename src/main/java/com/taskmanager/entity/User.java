@@ -50,10 +50,10 @@ public class User {
     public void setTasks(List<Task> tasks) { this.tasks = tasks; }
     
 
-    @Column(name = "focus_score", nullable = false)
+    @Column(name = "focus_score")
     private Integer focusScore = 0;
 
-    @Column(name = "streak", nullable = false)  
+    @Column(name = "streak")  
     private Integer streak = 0;
 
     public Integer getFocusScore() { return focusScore != null ? focusScore : 0; }
