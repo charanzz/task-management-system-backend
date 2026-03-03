@@ -101,11 +101,6 @@
     <version>1.18.30</version>
     <scope>provided</scope>
 </dependency>
-<!-- Email -->
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-mail</artifactId>
-</dependency>
 <!-- Scheduling (already included in Spring Boot, just needs enabling) -->
     </dependencies>
 
