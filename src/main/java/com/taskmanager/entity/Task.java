@@ -25,34 +25,24 @@ public class Task {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime completedAt;
-    
-    @ManyToOne @JoinColumn(name = "team_id") private Team team;
-    @ManyToOne @JoinColumn(name = "assignee_id") private User assignee;
 
-    public Team getTeam() {
-		return team;
-	}
-
-	public void setTeam(Team team) {
-		this.team = team;
-	}
-
-	public User getAssignee() {
-		return assignee;
-	}
-
-	public void setAssignee(User assignee) {
-		this.assignee = assignee;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-	@ManyToOne
+    // ── Relationships ─────────────────────────────────────
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnoreProperties("tasks")
     private User user;
 
+    @ManyToOne
+    @JoinColumn(name = "team_id")
+    @JsonIgnoreProperties({"members", "tasks"})
+    private Team team;
+
+    @ManyToOne
+    @JoinColumn(name = "assignee_id")
+    @JsonIgnoreProperties("tasks")
+    private User assignee;
+
+    // ── Lifecycle ─────────────────────────────────────────
     public Task() {}
 
     @PrePersist
@@ -67,7 +57,9 @@ public class Task {
         updatedAt = LocalDateTime.now();
     }
 
+    // ── Getters & Setters ─────────────────────────────────
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -95,4 +87,10 @@ public class Task {
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+
+    public Team getTeam() { return team; }
+    public void setTeam(Team team) { this.team = team; }
+
+    public User getAssignee() { return assignee; }
+    public void setAssignee(User assignee) { this.assignee = assignee; }
 }

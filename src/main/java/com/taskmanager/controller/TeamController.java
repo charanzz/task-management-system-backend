@@ -37,7 +37,7 @@ public class TeamController {
             .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    // GET /api/teams - get my teams
+    // GET /api/teams
     @GetMapping
     public ResponseEntity<?> getMyTeams(Authentication auth) {
         User user = getUser(auth);
@@ -65,7 +65,7 @@ public class TeamController {
         return ResponseEntity.ok(result);
     }
 
-    // POST /api/teams - create team
+    // POST /api/teams
     @PostMapping
     public ResponseEntity<?> createTeam(@RequestBody Map<String, String> body, Authentication auth) {
         User user = getUser(auth);
@@ -85,14 +85,15 @@ public class TeamController {
         return ResponseEntity.ok(Map.of("id", team.getId(), "name", team.getName(), "message", "Team created!"));
     }
 
-    // POST /api/teams/{id}/invite - invite by email
+    // POST /api/teams/{id}/invite
     @PostMapping("/{id}/invite")
     public ResponseEntity<?> inviteMember(@PathVariable Long id,
             @RequestBody Map<String, String> body, Authentication auth) {
         User user = getUser(auth);
         Team team = teamRepository.findById(id).orElseThrow(() -> new RuntimeException("Team not found"));
         String email = body.get("email");
-        if (email == null || email.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "Email required"));
+        if (email == null || email.isBlank())
+            return ResponseEntity.badRequest().body(Map.of("error", "Email required"));
 
         String token = UUID.randomUUID().toString();
         TeamInvite invite = new TeamInvite();
@@ -105,7 +106,8 @@ public class TeamController {
         teamInviteRepository.save(invite);
 
         String inviteLink = "https://www.todoperks.online/join-team?token=" + token;
-        emailService.sendEmail(email, "You're invited to join " + team.getName() + " on TaskFlow",
+        emailService.sendEmail(email,
+            "You're invited to join " + team.getName() + " on TaskFlow",
             "<div style='font-family:sans-serif;max-width:500px;margin:0 auto;padding:32px;background:#111118;color:#f0f0f8;border-radius:16px'>" +
             "<h2 style='color:#a855f7'>🤝 Team Invitation</h2>" +
             "<p><strong>" + user.getName() + "</strong> invited you to join <strong>" + team.getName() + "</strong> on TaskFlow.</p>" +
@@ -115,7 +117,7 @@ public class TeamController {
         return ResponseEntity.ok(Map.of("message", "Invitation sent to " + email));
     }
 
-    // GET /api/teams/join?token=xxx - accept invite
+    // GET /api/teams/join?token=xxx
     @GetMapping("/join")
     public ResponseEntity<?> joinTeam(@RequestParam String token, Authentication auth) {
         User user = getUser(auth);
@@ -133,10 +135,14 @@ public class TeamController {
             teamMemberRepository.save(member);
         }
         teamInviteRepository.delete(invite);
-        return ResponseEntity.ok(Map.of("teamId", invite.getTeam().getId(), "teamName", invite.getTeam().getName(), "message", "Joined team!"));
+        return ResponseEntity.ok(Map.of(
+            "teamId", invite.getTeam().getId(),
+            "teamName", invite.getTeam().getName(),
+            "message", "Joined team!"
+        ));
     }
 
-    // GET /api/teams/{id}/tasks - get team tasks
+    // GET /api/teams/{id}/tasks
     @GetMapping("/{id}/tasks")
     public ResponseEntity<?> getTeamTasks(@PathVariable Long id, Authentication auth) {
         User user = getUser(auth);
@@ -146,7 +152,7 @@ public class TeamController {
         return ResponseEntity.ok(tasks);
     }
 
-    // POST /api/teams/{id}/tasks - create team task
+    // POST /api/teams/{id}/tasks
     @PostMapping("/{id}/tasks")
     public ResponseEntity<?> createTeamTask(@PathVariable Long id,
             @RequestBody Map<String, Object> body, Authentication auth) {
@@ -155,11 +161,16 @@ public class TeamController {
             return ResponseEntity.status(403).body(Map.of("error", "Not a team member"));
 
         Team team = teamRepository.findById(id).orElseThrow(() -> new RuntimeException("Team not found"));
+
         Task task = new Task();
         task.setTitle((String) body.getOrDefault("title", "Untitled"));
         task.setDescription((String) body.getOrDefault("description", ""));
-        task.setPriority(Task.Priority.valueOf((String) body.getOrDefault("priority", "MEDIUM")));
-        task.setStatus(Task.Status.TODO);
+
+        // ✅ Use TaskPriority and TaskStatus (separate enums, not nested)
+        String priorityStr = (String) body.getOrDefault("priority", "MEDIUM");
+        task.setPriority(TaskPriority.valueOf(priorityStr));
+        task.setStatus(TaskStatus.TODO);
+
         task.setUser(user);
         task.setTeam(team);
 
@@ -167,8 +178,13 @@ public class TeamController {
             Long assigneeId = Long.parseLong(body.get("assigneeId").toString());
             userRepository.findById(assigneeId).ifPresent(task::setAssignee);
         }
+
         taskRepository.save(task);
-        return ResponseEntity.ok(Map.of("id", task.getId(), "title", task.getTitle(), "message", "Task created!"));
+        return ResponseEntity.ok(Map.of(
+            "id", task.getId(),
+            "title", task.getTitle(),
+            "message", "Task created!"
+        ));
     }
 
     // DELETE /api/teams/{id}/leave

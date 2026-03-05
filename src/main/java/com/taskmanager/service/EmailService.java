@@ -25,8 +25,8 @@ public class EmailService {
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String RESEND_API = "https://api.resend.com/emails";
 
-    // ─── Core send method ────────────────────────────────────────────────────
-    private void sendEmail(String to, String subject, String htmlBody) {
+    // ─── Core send method — PUBLIC so TeamController and others can call it ──
+    public void sendEmail(String to, String subject, String htmlBody) {
         if (resendApiKey == null || resendApiKey.isBlank()) {
             System.err.println("❌ RESEND_API_KEY is not set!");
             return;
