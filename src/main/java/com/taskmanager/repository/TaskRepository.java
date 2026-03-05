@@ -31,4 +31,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
         @Param("start") LocalDateTime start,
         @Param("end") LocalDateTime end
     );
+    
+    List<Task> findByTeamId(Long teamId);
+    long countByUserId(Long userId);
+    long countByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

@@ -25,8 +25,30 @@ public class Task {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime completedAt;
+    
+    @ManyToOne @JoinColumn(name = "team_id") private Team team;
+    @ManyToOne @JoinColumn(name = "assignee_id") private User assignee;
 
-    @ManyToOne
+    public Team getTeam() {
+		return team;
+	}
+
+	public void setTeam(Team team) {
+		this.team = team;
+	}
+
+	public User getAssignee() {
+		return assignee;
+	}
+
+	public void setAssignee(User assignee) {
+		this.assignee = assignee;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+	@ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnoreProperties("tasks")
     private User user;
