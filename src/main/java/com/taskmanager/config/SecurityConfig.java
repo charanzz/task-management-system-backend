@@ -47,6 +47,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/users/**").permitAll()
                     .requestMatchers("/api/setup/**").permitAll()  // ← ADDED
+                    .requestMatchers("/api/teams/join").permitAll() // ← invite link works without login
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .anyRequest().authenticated()
             )

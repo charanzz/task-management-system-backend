@@ -194,4 +194,22 @@ public class TeamController {
         teamMemberRepository.deleteByTeamIdAndUserId(id, user.getId());
         return ResponseEntity.ok(Map.of("message", "Left team"));
     }
+
+    // DELETE /api/teams/{id} - delete team (owner only)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTeam(@PathVariable Long id, Authentication auth) {
+        User user = getUser(auth);
+        Team team = teamRepository.findById(id).orElseThrow(() -> new RuntimeException("Team not found"));
+        // Check if user is owner
+        boolean isOwner = teamMemberRepository.findByTeamId(id).stream()
+            .anyMatch(m -> m.getUser().getId().equals(user.getId()) && "OWNER".equals(m.getRole()));
+        if (!isOwner) return ResponseEntity.status(403).body(Map.of("error", "Only the owner can delete a team"));
+        // Delete all members and invites first
+        teamMemberRepository.findByTeamId(id).forEach(teamMemberRepository::delete);
+        teamInviteRepository.findAll().stream()
+            .filter(i -> i.getTeam().getId().equals(id))
+            .forEach(teamInviteRepository::delete);
+        teamRepository.delete(team);
+        return ResponseEntity.ok(Map.of("message", "Team deleted"));
+    }
 }
