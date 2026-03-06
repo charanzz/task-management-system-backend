@@ -14,7 +14,6 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Constructor Injection (Single constructor only)
     public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -23,31 +22,20 @@ public class UserServiceImpl implements UserService {
     // ================= REGISTER =================
     @Override
     public User registerUser(User user) {
-    	
-    	 // Check if email already exists
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(user.getEmail()).isPresent())
             throw new RuntimeException("Email already registered");
-        }
-
-        // encode password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole(Role.USER);
-
         return userRepository.save(user);
     }
 
     // ================= LOGIN =================
     @Override
     public User login(String email, String password) {
-
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
-
-        // compare encoded password
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(password, user.getPassword()))
             throw new RuntimeException("Invalid email or password");
-        }
-
         return user;
     }
 
@@ -57,5 +45,10 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
-    
+
+    // ================= SAVE ================= ✅ ADDED
+    @Override
+    public User save(User user) {
+        return userRepository.save(user);
+    }
 }
