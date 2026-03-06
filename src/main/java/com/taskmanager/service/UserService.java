@@ -9,4 +9,6 @@ public interface UserService {
     User login(String email, String password);
 
     User getUserByEmail(String email);
+
+    User save(User user);  // ✅ ADDED
 }

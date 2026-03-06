@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -42,15 +43,12 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest request) {
         try {
-            if (request.getName() == null || request.getName().trim().isEmpty()) {
+            if (request.getName() == null || request.getName().trim().isEmpty())
                 return ResponseEntity.badRequest().body(Map.of("message", "Name is required"));
-            }
-            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty())
                 return ResponseEntity.badRequest().body(Map.of("message", "Email is required"));
-            }
-            if (request.getPassword() == null || request.getPassword().length() < 6) {
+            if (request.getPassword() == null || request.getPassword().length() < 6)
                 return ResponseEntity.badRequest().body(Map.of("message", "Password must be at least 6 characters"));
-            }
 
             User user = new User();
             user.setName(request.getName().trim());
@@ -72,12 +70,19 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         User user = userService.login(request.getEmail(), request.getPassword());
+
+        // ✅ Update last login time
+        user.setLastLoginAt(LocalDateTime.now());
+        userService.save(user);
+
         String token = jwtUtil.generateToken(user.getEmail());
         return ResponseEntity.ok(Map.of(
             "token", token,
             "email", user.getEmail(),
             "name", user.getName(),
-            "id", user.getId()
+            "id", user.getId(),
+            "role", user.getRole() != null ? user.getRole().name() : "USER",
+            "isPro", Boolean.TRUE.equals(user.getIsPro())
         ));
     }
 
@@ -87,7 +92,9 @@ public class UserController {
         return ResponseEntity.ok(Map.of(
             "id", user.getId(),
             "name", user.getName(),
-            "email", user.getEmail()
+            "email", user.getEmail(),
+            "role", user.getRole() != null ? user.getRole().name() : "USER",
+            "isPro", Boolean.TRUE.equals(user.getIsPro())
         ));
     }
 
