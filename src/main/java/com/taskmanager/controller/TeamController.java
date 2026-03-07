@@ -18,18 +18,21 @@ public class TeamController {
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
+    private final TeamMessageRepository teamMessageRepository;
     private final TeamInviteRepository teamInviteRepository;
     private final EmailService emailService;
 
     public TeamController(TeamRepository teamRepository, TeamMemberRepository teamMemberRepository,
         UserRepository userRepository, TaskRepository taskRepository,
-        TeamInviteRepository teamInviteRepository, EmailService emailService) {
+        TeamInviteRepository teamInviteRepository, EmailService emailService,
+        TeamMessageRepository teamMessageRepository) {
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.userRepository = userRepository;
         this.taskRepository = taskRepository;
         this.teamInviteRepository = teamInviteRepository;
         this.emailService = emailService;
+        this.teamMessageRepository = teamMessageRepository;
     }
 
     private User getUser(Authentication auth) {
@@ -193,6 +196,29 @@ public class TeamController {
         User user = getUser(auth);
         teamMemberRepository.deleteByTeamIdAndUserId(id, user.getId());
         return ResponseEntity.ok(Map.of("message", "Left team"));
+    }
+
+    // GET /api/teams/{id}/messages
+    @GetMapping("/{id}/messages")
+    public ResponseEntity<?> getMessages(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(teamMessageRepository.findByTeamIdOrderBySentAtAsc(id));
+    }
+
+    // POST /api/teams/{id}/messages
+    @PostMapping("/{id}/messages")
+    public ResponseEntity<?> sendMessage(@PathVariable Long id,
+                                         @RequestBody Map<String,String> body,
+                                         Authentication auth) {
+        User user = getUser(auth);
+        Team team = teamRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Team not found"));
+        if (!teamMemberRepository.existsByTeamIdAndUserId(id, user.getId()))
+            return ResponseEntity.status(403).body(Map.of("error", "Not a member"));
+        TeamMessage msg = new TeamMessage();
+        msg.setText(body.get("text"));
+        msg.setTeam(team);
+        msg.setSender(user);
+        return ResponseEntity.ok(teamMessageRepository.save(msg));
     }
 
     // DELETE /api/teams/{id} - delete team (owner only)

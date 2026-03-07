@@ -1,0 +1,69 @@
+package com.taskmanager.config;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+/**
+ * Auto-runs DB migrations on every startup.
+ * Uses IF NOT EXISTS so it's safe to run multiple times.
+ * NO manual DB access needed — Spring Boot handles it!
+ */
+@Configuration
+public class DatabaseMigrationRunner {
+
+    @Bean
+    public CommandLineRunner runMigrations(JdbcTemplate jdbc) {
+        return args -> {
+            System.out.println("🔧 Running TaskFlow DB migrations...");
+
+            // Sub-tasks table
+            jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS sub_tasks (
+                    id         BIGSERIAL PRIMARY KEY,
+                    title      VARCHAR(500) NOT NULL,
+                    completed  BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    task_id    BIGINT REFERENCES tasks(id) ON DELETE CASCADE
+                )
+            """);
+
+            // Task comments table
+            jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS task_comments (
+                    id         BIGSERIAL PRIMARY KEY,
+                    text       TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    task_id    BIGINT REFERENCES tasks(id) ON DELETE CASCADE,
+                    user_id    BIGINT REFERENCES users(id)
+                )
+            """);
+
+            // Team messages (persistent chat)
+            jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS team_messages (
+                    id        BIGSERIAL PRIMARY KEY,
+                    text      TEXT NOT NULL,
+                    sent_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    team_id   BIGINT REFERENCES teams(id) ON DELETE CASCADE,
+                    sender_id BIGINT REFERENCES users(id)
+                )
+            """);
+
+            // Recurring columns on tasks (ALTER is safe with IF NOT EXISTS on Postgres)
+            try {
+                jdbc.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS recurring BOOLEAN DEFAULT FALSE");
+            } catch (Exception e) {
+                System.out.println("recurring column already exists, skipping");
+            }
+            try {
+                jdbc.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS recurring_interval VARCHAR(50)");
+            } catch (Exception e) {
+                System.out.println("recurring_interval column already exists, skipping");
+            }
+
+            System.out.println("✅ DB migrations complete!");
+        };
+    }
+}
