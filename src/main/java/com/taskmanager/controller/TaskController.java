@@ -2,6 +2,7 @@ package com.taskmanager.controller;
 
 import com.taskmanager.entity.*;
 import com.taskmanager.repository.*;
+import com.taskmanager.service.NotificationService;
 import com.taskmanager.service.TaskService;
 import com.taskmanager.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -21,16 +22,19 @@ public class TaskController {
     private final TaskRepository taskRepository;
     private final SubTaskRepository subTaskRepository;
     private final TaskCommentRepository commentRepository;
+    private final NotificationService notificationService;
 
     public TaskController(TaskService taskService, UserService userService,
                           TaskRepository taskRepository,
                           SubTaskRepository subTaskRepository,
-                          TaskCommentRepository commentRepository) {
+                          TaskCommentRepository commentRepository,
+                          NotificationService notificationService) {
         this.taskService = taskService;
         this.userService = userService;
         this.taskRepository = taskRepository;
         this.subTaskRepository = subTaskRepository;
         this.commentRepository = commentRepository;
+        this.notificationService = notificationService;
     }
 
     private User getUser(Authentication auth) {
@@ -96,9 +100,18 @@ public class TaskController {
             task.setPriority(TaskPriority.valueOf((String) body.get("priority")));
         if (body.get("status") != null) {
             TaskStatus s = TaskStatus.valueOf((String) body.get("status"));
+            boolean wasNotDone = task.getStatus() != TaskStatus.DONE;
             task.setStatus(s);
-            if (s == TaskStatus.DONE && task.getCompletedAt() == null)
+            if (s == TaskStatus.DONE && task.getCompletedAt() == null) {
                 task.setCompletedAt(LocalDateTime.now());
+                // Fire in-app notification
+                if (wasNotDone) {
+                    int pts = task.getPriority() != null ? switch(task.getPriority()) {
+                        case HIGH -> 30; case MEDIUM -> 15; default -> 5;
+                    } : 15;
+                    try { notificationService.taskCompleted(task.getUser(), task, pts); } catch (Exception ignored) {}
+                }
+            }
             // Auto-recreate if recurring and just completed
             if (s == TaskStatus.DONE && Boolean.TRUE.equals(task.getRecurring())) {
                 Task next = new Task();

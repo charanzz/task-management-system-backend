@@ -63,6 +63,20 @@ public class DatabaseMigrationRunner {
                 System.out.println("recurring_interval column already exists, skipping");
             }
 
+            // Notifications table
+            jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id         BIGSERIAL PRIMARY KEY,
+                    type       VARCHAR(50) NOT NULL,
+                    title      VARCHAR(255),
+                    body       TEXT,
+                    link       VARCHAR(255),
+                    read       BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    user_id    BIGINT REFERENCES users(id) ON DELETE CASCADE
+                )
+            """);
+
             System.out.println("✅ DB migrations complete!");
         };
     }
