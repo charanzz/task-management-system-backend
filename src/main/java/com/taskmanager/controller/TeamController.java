@@ -121,14 +121,29 @@ public class TeamController {
     }
 
     // GET /api/teams/join?token=xxx
+    // Step 1 (no auth): validate token, return team info so frontend can show login prompt
+    // Step 2 (with auth): actually join the team
     @GetMapping("/join")
     public ResponseEntity<?> joinTeam(@RequestParam String token, Authentication auth) {
-        User user = getUser(auth);
         TeamInvite invite = teamInviteRepository.findByToken(token)
-            .orElseThrow(() -> new RuntimeException("Invalid or expired invite"));
-        if (invite.getExpiresAt().isBefore(LocalDateTime.now()))
-            return ResponseEntity.badRequest().body(Map.of("error", "Invite expired"));
+            .orElse(null);
+        if (invite == null)
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired invite link"));
+        if (invite.getExpiresAt() != null && invite.getExpiresAt().isBefore(LocalDateTime.now()))
+            return ResponseEntity.badRequest().body(Map.of("error", "This invite link has expired"));
 
+        // Not logged in — return team info so frontend can redirect to login
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.ok(Map.of(
+                "requiresAuth", true,
+                "teamName", invite.getTeam().getName(),
+                "token", token,
+                "message", "Please log in to join this team"
+            ));
+        }
+
+        // Logged in — actually join
+        User user = getUser(auth);
         boolean alreadyMember = teamMemberRepository.existsByTeamIdAndUserId(invite.getTeam().getId(), user.getId());
         if (!alreadyMember) {
             TeamMember member = new TeamMember();
@@ -137,11 +152,13 @@ public class TeamController {
             member.setRole("MEMBER");
             teamMemberRepository.save(member);
         }
-        teamInviteRepository.delete(invite);
+        // Keep invite valid so others can still use it (or delete if single-use)
+        // teamInviteRepository.delete(invite); // uncomment for single-use invites
         return ResponseEntity.ok(Map.of(
+            "requiresAuth", false,
             "teamId", invite.getTeam().getId(),
             "teamName", invite.getTeam().getName(),
-            "message", "Joined team!"
+            "message", "Successfully joined " + invite.getTeam().getName() + "!"
         ));
     }
 
