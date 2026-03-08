@@ -120,4 +120,11 @@ public class User {
 
     public String getTimezone() { return timezone; }
     public void setTimezone(String timezone) { this.timezone = timezone; }
+
+    // ── Onboarding ────────────────────────────────────────
+    @Column(name = "onboarding_done")
+    private Boolean onboardingDone = false;
+
+    public Boolean getOnboardingDone() { return onboardingDone != null && onboardingDone; }
+    public void setOnboardingDone(Boolean onboardingDone) { this.onboardingDone = onboardingDone; }
 }

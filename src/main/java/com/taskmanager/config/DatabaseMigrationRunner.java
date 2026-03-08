@@ -82,6 +82,22 @@ public class DatabaseMigrationRunner {
             try { jdbc.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(300)"); } catch (Exception e) {}
             try { jdbc.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS timezone VARCHAR(60)"); } catch (Exception e) {}
 
+            // Pomodoro sessions table
+            jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS pomodoro_sessions (
+                    id          BIGSERIAL PRIMARY KEY,
+                    duration    INT DEFAULT 25,
+                    completed   BOOLEAN DEFAULT FALSE,
+                    started_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    ended_at    TIMESTAMP,
+                    task_id     BIGINT REFERENCES tasks(id) ON DELETE SET NULL,
+                    user_id     BIGINT REFERENCES users(id) ON DELETE CASCADE
+                )
+            """);
+
+            // Onboarding flag on users
+            try { jdbc.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_done BOOLEAN DEFAULT FALSE"); } catch (Exception e) {}
+
             System.out.println("✅ DB migrations complete!");
         };
     }

@@ -225,6 +225,51 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Password changed successfully!"));
     }
 
+    // ── Onboarding status ────────────────────────────────
+    @GetMapping("/onboarding-status")
+    public ResponseEntity<?> onboardingStatus(Authentication auth) {
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(Map.of(
+            "done", user.getOnboardingDone(),
+            "name", user.getName() != null ? user.getName() : "",
+            "hasAvatar", user.getAvatarColor() != null
+        ));
+    }
+
+    @PostMapping("/complete-onboarding")
+    public ResponseEntity<?> completeOnboarding(@RequestBody Map<String, Object> body, Authentication auth) {
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (body.containsKey("name") && body.get("name") != null)
+            user.setName(body.get("name").toString().trim());
+        if (body.containsKey("avatarColor"))
+            user.setAvatarColor(body.get("avatarColor").toString());
+        if (body.containsKey("timezone"))
+            user.setTimezone(body.get("timezone").toString());
+        if (body.containsKey("bio"))
+            user.setBio(body.get("bio").toString());
+
+        user.setOnboardingDone(true);
+        userRepository.save(user);
+
+        // Create welcome task
+        if (body.containsKey("firstTask") && body.get("firstTask") != null) {
+            String taskTitle = body.get("firstTask").toString().trim();
+            if (!taskTitle.isBlank()) {
+                Task t = new Task();
+                t.setTitle(taskTitle);
+                t.setPriority(com.taskmanager.entity.TaskPriority.HIGH);
+                t.setStatus(com.taskmanager.entity.TaskStatus.TODO);
+                t.setUser(user);
+                taskRepository.save(t);
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Onboarding complete!", "name", user.getName()));
+    }
+
     // ── DELETE account ────────────────────────────────────
     @DeleteMapping("/account")
     public ResponseEntity<?> deleteAccount(@RequestBody Map<String, String> body, Authentication auth) {
