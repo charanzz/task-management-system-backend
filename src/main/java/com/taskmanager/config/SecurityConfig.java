@@ -45,7 +45,7 @@ public class SecurityConfig {
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/api/auth/**").permitAll()
-                    .requestMatchers("/api/users/**").permitAll()
+                    .requestMatchers("/api/users/register", "/api/users/login", "/api/users/test", "/api/users/test-email").permitAll()
                     .requestMatchers("/api/setup/**").permitAll()  // ← ADDED
                     .requestMatchers("/api/teams/join").permitAll() // ← invite link works without login
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
