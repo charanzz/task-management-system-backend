@@ -145,6 +145,125 @@ public class AIService {
     }
 
     // 4. Weekly Coach
+    // ── Daily Focus: AI picks top 3 tasks ───────────────────
+    public List<Map<String,Object>> getDailyFocusTasks(User user, List<Task> tasks) {
+        List<Task> pending = tasks.stream()
+            .filter(t -> t.getStatus() != null && !t.getStatus().name().equals("DONE"))
+            .collect(java.util.stream.Collectors.toList());
+
+        if (pending.isEmpty()) return List.of();
+
+        // Build task list for AI
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < Math.min(pending.size(), 20); i++) {
+            Task t = pending.get(i);
+            sb.append(i+1).append(". Title: ").append(t.getTitle())
+              .append(" | Priority: ").append(t.getPriority() != null ? t.getPriority().name() : "MEDIUM")
+              .append(" | Due: ").append(t.getDueDate() != null ? t.getDueDate().toString() : "no due date")
+              .append("\n");
+        }
+
+        String system = """
+            You are a productivity coach. Pick the TOP 3 most important tasks to focus on TODAY.
+            Consider: urgency (due date), priority level, and impact.
+            Respond ONLY with valid JSON array, no markdown:
+            [
+              {"index": 1, "reason": "short reason why this is most important today (max 12 words)"},
+              {"index": 2, "reason": "..."},
+              {"index": 3, "reason": "..."}
+            ]
+            Today is: """ + java.time.LocalDate.now() + """
+            If fewer than 3 tasks exist, return only those available.
+            """;
+
+        try {
+            String raw = callClaude(system, "Tasks:\n" + sb)
+                .trim().replaceAll("```json|```", "").trim();
+            JsonNode arr = mapper.readTree(raw);
+            List<Map<String,Object>> result = new java.util.ArrayList<>();
+            for (JsonNode node : arr) {
+                int idx = node.path("index").asInt(1) - 1;
+                if (idx >= 0 && idx < pending.size()) {
+                    Task t = pending.get(idx);
+                    Map<String,Object> m = new java.util.LinkedHashMap<>();
+                    m.put("id",       t.getId());
+                    m.put("title",    t.getTitle());
+                    m.put("priority", t.getPriority() != null ? t.getPriority().name() : "MEDIUM");
+                    m.put("dueDate",  t.getDueDate() != null ? t.getDueDate().toString() : null);
+                    m.put("status",   t.getStatus().name());
+                    m.put("reason",   node.path("reason").asText("High priority task"));
+                    result.add(m);
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            // Fallback: return top 3 by priority + due date
+            return pending.stream()
+                .sorted(java.util.Comparator
+                    .comparingInt((Task t) -> t.getPriority() != null ? switch(t.getPriority().name()) {
+                        case "HIGH" -> 0; case "MEDIUM" -> 1; default -> 2;
+                    } : 1)
+                    .thenComparing(t -> t.getDueDate() != null ? t.getDueDate() : java.time.LocalDateTime.MAX))
+                .limit(3)
+                .map(t -> {
+                    Map<String,Object> m = new java.util.LinkedHashMap<>();
+                    m.put("id",       t.getId());
+                    m.put("title",    t.getTitle());
+                    m.put("priority", t.getPriority() != null ? t.getPriority().name() : "MEDIUM");
+                    m.put("dueDate",  t.getDueDate() != null ? t.getDueDate().toString() : null);
+                    m.put("status",   t.getStatus().name());
+                    m.put("reason",   "High priority task");
+                    return m;
+                })
+                .collect(java.util.stream.Collectors.toList());
+        }
+    }
+
+    // ── Weekly Review: rich HTML stats + AI insights ─────
+    public Map<String,Object> generateWeeklyReviewData(User user, List<Task> allTasks) {
+        java.time.LocalDateTime weekAgo = java.time.LocalDateTime.now().minusDays(7);
+
+        long completedThisWeek = allTasks.stream()
+            .filter(t -> "DONE".equals(t.getStatus() != null ? t.getStatus().name() : ""))
+            .filter(t -> t.getCompletedAt() != null && t.getCompletedAt().isAfter(weekAgo))
+            .count();
+        long highDone = allTasks.stream()
+            .filter(t -> "DONE".equals(t.getStatus() != null ? t.getStatus().name() : ""))
+            .filter(t -> t.getCompletedAt() != null && t.getCompletedAt().isAfter(weekAgo))
+            .filter(t -> t.getPriority() != null && "HIGH".equals(t.getPriority().name()))
+            .count();
+        long overdue = allTasks.stream()
+            .filter(t -> !"DONE".equals(t.getStatus() != null ? t.getStatus().name() : ""))
+            .filter(t -> t.getDueDate() != null && t.getDueDate().isBefore(java.time.LocalDateTime.now()))
+            .count();
+        long pending = allTasks.stream()
+            .filter(t -> !"DONE".equals(t.getStatus() != null ? t.getStatus().name() : ""))
+            .count();
+
+        String aiInsight;
+        try {
+            aiInsight = callClaude(
+                "You are a productivity coach. Give a 2-sentence personalized weekly insight. Be specific, warm, and actionable.",
+                String.format("User: %s | Completed this week: %d | High priority done: %d | Overdue: %d | Pending: %d | Streak: %d | Focus score: %d",
+                    user.getName(), completedThisWeek, highDone, overdue, pending,
+                    user.getStreak() != null ? user.getStreak() : 0,
+                    user.getFocusScore() != null ? user.getFocusScore() : 0)
+            );
+        } catch (Exception e) {
+            aiInsight = "Great work this week, " + user.getName() + "! Keep pushing — consistency is the key to mastery.";
+        }
+
+        Map<String,Object> data = new java.util.LinkedHashMap<>();
+        data.put("completedThisWeek", completedThisWeek);
+        data.put("highPriorityDone",  highDone);
+        data.put("overdueTasks",      overdue);
+        data.put("pendingTasks",      pending);
+        data.put("focusScore",        user.getFocusScore() != null ? user.getFocusScore() : 0);
+        data.put("streak",            user.getStreak() != null ? user.getStreak() : 0);
+        data.put("aiInsight",         aiInsight);
+        return data;
+    }
+
     public String generateWeeklyCoach(User user, List<Task> tasks, int focusScore, int streak) {
         long completed = tasks.stream().filter(t -> "DONE".equals(t.getStatus())).count();
         long highDone  = tasks.stream().filter(t ->

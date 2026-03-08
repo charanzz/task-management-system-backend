@@ -114,4 +114,37 @@ public class AIController {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
+
+    // ── Daily Focus Mode ─────────────────────────────────
+    // GET /api/ai/daily-focus
+    @GetMapping("/daily-focus")
+    public ResponseEntity<?> getDailyFocus(Authentication auth) {
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        List<Task> tasks = taskRepository.findByUserId(user.getId());
+        List<Map<String,Object>> focus = aiService.getDailyFocusTasks(user, tasks);
+        return ResponseEntity.ok(Map.of(
+            "date",       java.time.LocalDate.now().toString(),
+            "userName",   user.getName() != null ? user.getName() : "there",
+            "focusTasks", focus,
+            "streak",     user.getStreak() != null ? user.getStreak() : 0,
+            "focusScore", user.getFocusScore() != null ? user.getFocusScore() : 0
+        ));
+    }
+
+    // ── Weekly Review data ───────────────────────────────
+    // GET /api/ai/weekly-review
+    @GetMapping("/weekly-review")
+    public ResponseEntity<?> getWeeklyReview(Authentication auth) {
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        List<Task> tasks = taskRepository.findByUserId(user.getId());
+        Map<String,Object> data = aiService.generateWeeklyReviewData(user, tasks);
+        return ResponseEntity.ok(data);
+    }
+
+    // ── Natural Language task parse (already exists as /parse-task) ──
+    // POST /api/ai/parse-task  { "input": "call mom tomorrow 3pm high priority" }
+    // → already implemented, frontend just needs UI upgrade
+
 }
