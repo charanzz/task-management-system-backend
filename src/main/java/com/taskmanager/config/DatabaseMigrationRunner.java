@@ -77,6 +77,11 @@ public class DatabaseMigrationRunner {
                 )
             """);
 
+            // Profile fields on users
+            try { jdbc.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_color VARCHAR(20)"); } catch (Exception e) {}
+            try { jdbc.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(300)"); } catch (Exception e) {}
+            try { jdbc.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS timezone VARCHAR(60)"); } catch (Exception e) {}
+
             System.out.println("✅ DB migrations complete!");
         };
     }

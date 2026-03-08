@@ -54,6 +54,16 @@ public class User {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    // ── Profile ───────────────────────────────────────────
+    @Column(name = "avatar_color")
+    private String avatarColor; // hex color e.g. #7c3aed
+
+    @Column(name = "bio", length = 300)
+    private String bio;
+
+    @Column(name = "timezone")
+    private String timezone; // e.g. Asia/Kolkata
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();
@@ -101,4 +111,13 @@ public class User {
 
     public LocalDateTime getLastLoginAt() { return lastLoginAt; }
     public void setLastLoginAt(LocalDateTime lastLoginAt) { this.lastLoginAt = lastLoginAt; }
+
+    public String getAvatarColor() { return avatarColor; }
+    public void setAvatarColor(String avatarColor) { this.avatarColor = avatarColor; }
+
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
+
+    public String getTimezone() { return timezone; }
+    public void setTimezone(String timezone) { this.timezone = timezone; }
 }

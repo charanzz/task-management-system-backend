@@ -8,8 +8,14 @@ import com.taskmanager.entity.User;
 import com.taskmanager.service.EmailService;
 import com.taskmanager.service.GamificationService;
 import com.taskmanager.service.TaskService;
+import com.taskmanager.repository.TaskRepository;
+import com.taskmanager.repository.UserRepository;
+import com.taskmanager.entity.Task;
 import com.taskmanager.service.UserService;
 import com.taskmanager.config.JwtUtil;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,17 +33,26 @@ public class UserController {
     private final TaskService taskService;
     private final GamificationService gamificationService;
     private final EmailService emailService;
+    private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UserController(UserService userService,
                           JwtUtil jwtUtil,
                           TaskService taskService,
                           GamificationService gamificationService,
-                          EmailService emailService) {
+                          EmailService emailService,
+                          UserRepository userRepository,
+                          TaskRepository taskRepository,
+                          PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.taskService = taskService;
         this.gamificationService = gamificationService;
         this.emailService = emailService;
+        this.userRepository = userRepository;
+        this.taskRepository = taskRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/register")
@@ -138,4 +153,90 @@ public class UserController {
     public String test() {
         return "Users API working!";
     }
+
+    // ── GET full profile ──────────────────────────────────
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(Authentication auth) {
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        List<Task> tasks = taskRepository.findByUserId(user.getId());
+        long total     = tasks.size();
+        long completed = tasks.stream().filter(t -> "DONE".equals(String.valueOf(t.getStatus()))).count();
+        long overdue   = tasks.stream().filter(t -> t.getDueDate() != null
+            && t.getDueDate().isBefore(java.time.LocalDateTime.now())
+            && !"DONE".equals(String.valueOf(t.getStatus()))).count();
+
+        Map<String, Object> resp = new java.util.LinkedHashMap<>();
+        resp.put("id",             user.getId());
+        resp.put("name",           user.getName() != null ? user.getName() : "");
+        resp.put("email",          user.getEmail());
+        resp.put("bio",            user.getBio() != null ? user.getBio() : "");
+        resp.put("avatarColor",    user.getAvatarColor() != null ? user.getAvatarColor() : "#7c3aed");
+        resp.put("timezone",       user.getTimezone() != null ? user.getTimezone() : "Asia/Kolkata");
+        resp.put("isPro",          user.getIsPro());
+        resp.put("role",           user.getRole() != null ? user.getRole().name() : "USER");
+        resp.put("focusScore",     user.getFocusScore());
+        resp.put("streak",         user.getStreak());
+        resp.put("createdAt",      user.getCreatedAt() != null ? user.getCreatedAt().toString() : "");
+        resp.put("lastLoginAt",    user.getLastLoginAt() != null ? user.getLastLoginAt().toString() : "");
+        resp.put("totalTasks",     total);
+        resp.put("completedTasks", completed);
+        resp.put("overdueTasks",   overdue);
+        return ResponseEntity.ok(resp);
+    }
+
+    // ── UPDATE profile (name, bio, avatarColor, timezone) ─
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody Map<String, String> body, Authentication auth) {
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (body.containsKey("name") && !body.get("name").isBlank())
+            user.setName(body.get("name").trim());
+        if (body.containsKey("bio"))
+            user.setBio(body.get("bio").trim());
+        if (body.containsKey("avatarColor"))
+            user.setAvatarColor(body.get("avatarColor"));
+        if (body.containsKey("timezone"))
+            user.setTimezone(body.get("timezone"));
+
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Profile updated!", "name", user.getName()));
+    }
+
+    // ── CHANGE password ───────────────────────────────────
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> body, Authentication auth) {
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String current = body.get("currentPassword");
+        String newPass = body.get("newPassword");
+
+        if (current == null || newPass == null)
+            return ResponseEntity.badRequest().body(Map.of("error", "Both passwords required"));
+        if (newPass.length() < 6)
+            return ResponseEntity.badRequest().body(Map.of("error", "New password must be at least 6 characters"));
+        if (!passwordEncoder.matches(current, user.getPassword()))
+            return ResponseEntity.badRequest().body(Map.of("error", "Current password is incorrect"));
+
+        user.setPassword(passwordEncoder.encode(newPass));
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully!"));
+    }
+
+    // ── DELETE account ────────────────────────────────────
+    @DeleteMapping("/account")
+    public ResponseEntity<?> deleteAccount(@RequestBody Map<String, String> body, Authentication auth) {
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String password = body.get("password");
+        if (password == null || !passwordEncoder.matches(password, user.getPassword()))
+            return ResponseEntity.badRequest().body(Map.of("error", "Incorrect password"));
+
+        userRepository.delete(user);
+        return ResponseEntity.ok(Map.of("message", "Account deleted"));
+    }
+
 }

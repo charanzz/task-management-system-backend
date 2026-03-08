@@ -106,23 +106,21 @@ public class ReminderScheduler {
     private void sendDueSoonEmail(User user, Task task) {
         try {
             String subject = "⏰ Task Due Soon: " + task.getTitle();
-            String html = """
-                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0a0a0f;color:#f0f0f8;padding:32px;border-radius:16px">
-                  <div style="text-align:center;margin-bottom:24px">
-                    <span style="font-size:40px">⏰</span>
-                    <h2 style="color:#ffd93d;font-size:22px;margin:12px 0">Task Due Soon!</h2>
-                  </div>
-                  <div style="background:#1a1a24;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px;margin-bottom:20px">
-                    <p style="color:#a855f7;font-size:12px;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px">TASK</p>
-                    <p style="font-size:18px;font-weight:700;margin:0 0 8px">" + task.getTitle() + "</p>
-                    <p style="color:#ffd93d;font-size:13px;margin:0">Due: " + task.getDueDate().toString().replace("T", " at ").substring(0, 19) + "</p>
-                  </div>
-                  <p style="color:#6b6b8a;font-size:12px;text-align:center">This task is due in less than 24 hours. Head to TaskFlow to complete it!</p>
-                  <div style="text-align:center;margin-top:20px">
-                    <a href="https://www.todoperks.online/dashboard" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px">Open TaskFlow →</a>
-                  </div>
-                </div>
-                """;
+            String dueStr = task.getDueDate().toString().replace("T", " at ").substring(0, 19);
+            String html = "<div style=\"font-family:sans-serif;max-width:520px;margin:0 auto;background:#0a0a0f;color:#f0f0f8;padding:32px;border-radius:16px\">"
+                + "<div style=\"text-align:center;margin-bottom:24px\">"
+                + "<span style=\"font-size:40px\">⏰</span>"
+                + "<h2 style=\"color:#ffd93d;font-size:22px;margin:12px 0\">Task Due Soon!</h2>"
+                + "</div>"
+                + "<div style=\"background:#1a1a24;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px;margin-bottom:20px\">"
+                + "<p style=\"color:#a855f7;font-size:12px;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px\">TASK</p>"
+                + "<p style=\"font-size:18px;font-weight:700;margin:0 0 8px\">" + task.getTitle() + "</p>"
+                + "<p style=\"color:#ffd93d;font-size:13px;margin:0\">Due: " + dueStr + "</p>"
+                + "</div>"
+                + "<p style=\"color:#6b6b8a;font-size:12px;text-align:center\">This task is due in less than 24 hours. Head to TaskFlow to complete it!</p>"
+                + "<div style=\"text-align:center;margin-top:20px\">"
+                + "<a href=\"https://www.todoperks.online/dashboard\" style=\"display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px\">Open TaskFlow →</a>"
+                + "</div></div>";
             emailService.sendEmail(user.getEmail(), subject, html);
         } catch (Exception e) {
             System.err.println("Due-soon email failed: " + e.getMessage());
@@ -132,23 +130,21 @@ public class ReminderScheduler {
     private void sendStreakRiskEmail(User user) {
         try {
             String subject = "🔥 Your " + user.getStreak() + "-day streak is at risk!";
-            String html = """
-                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0a0a0f;color:#f0f0f8;padding:32px;border-radius:16px">
-                  <div style="text-align:center;margin-bottom:24px">
-                    <span style="font-size:48px">🔥</span>
-                    <h2 style="color:#ff6b6b;font-size:22px;margin:12px 0">Streak at Risk!</h2>
-                  </div>
-                  <p style="text-align:center;font-size:15px;color:#f0f0f8;margin-bottom:8px">
-                    Hey <strong>" + user.getName() + "</strong>,
-                  </p>
-                  <p style="text-align:center;font-size:14px;color:#6b6b8a;margin-bottom:24px">
-                    You have a <strong style="color:#ffd93d">" + user.getStreak() + "-day streak</strong> — but you haven't completed any tasks today. Complete at least one task before midnight to keep it alive!
-                  </p>
-                  <div style="text-align:center">
-                    <a href="https://www.todoperks.online/dashboard" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px">Complete a Task Now →</a>
-                  </div>
-                </div>
-                """;
+            String html = "<div style=\"font-family:sans-serif;max-width:520px;margin:0 auto;background:#0a0a0f;color:#f0f0f8;padding:32px;border-radius:16px\">"
+                + "<div style=\"text-align:center;margin-bottom:24px\">"
+                + "<span style=\"font-size:48px\">🔥</span>"
+                + "<h2 style=\"color:#ff6b6b;font-size:22px;margin:12px 0\">Streak at Risk!</h2>"
+                + "</div>"
+                + "<p style=\"text-align:center;font-size:15px;color:#f0f0f8;margin-bottom:8px\">"
+                + "Hey <strong>" + user.getName() + "</strong>,"
+                + "</p>"
+                + "<p style=\"text-align:center;font-size:14px;color:#6b6b8a;margin-bottom:24px\">"
+                + "You have a <strong style=\"color:#ffd93d\">" + user.getStreak() + "-day streak</strong>"
+                + " — but you haven't completed any tasks today. Complete one task before midnight to keep it alive!"
+                + "</p>"
+                + "<div style=\"text-align:center\">"
+                + "<a href=\"https://www.todoperks.online/dashboard\" style=\"display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px\">Complete a Task Now →</a>"
+                + "</div></div>";
             emailService.sendEmail(user.getEmail(), subject, html);
         } catch (Exception e) {
             System.err.println("Streak risk email failed: " + e.getMessage());
