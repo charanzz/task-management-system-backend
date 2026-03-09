@@ -81,6 +81,8 @@ public class TaskController {
             task.setRecurring((Boolean) body.get("recurring"));
         if (body.get("recurringInterval") != null)
             task.setRecurringInterval((String) body.get("recurringInterval"));
+        if (body.get("tags") != null)
+            task.setTags((String) body.get("tags"));
         return ResponseEntity.ok(taskService.createTask(task));
     }
 
@@ -133,6 +135,7 @@ public class TaskController {
         if (body.get("recurring") != null) task.setRecurring((Boolean) body.get("recurring"));
         if (body.get("recurringInterval") != null)
             task.setRecurringInterval((String) body.get("recurringInterval"));
+        if (body.get("tags") != null) task.setTags((String) body.get("tags"));
 
         return ResponseEntity.ok(taskRepository.save(task));
     }
@@ -220,6 +223,37 @@ public class TaskController {
         c.setTask(task);
         c.setAuthor(user);
         return ResponseEntity.ok(commentRepository.save(c));
+    }
+
+    // ── Export tasks as CSV ──────────────────────────────
+    @GetMapping("/export/csv")
+    public ResponseEntity<String> exportCsv(Authentication auth) {
+        User user = getUser(auth);
+        List<Task> tasks = taskRepository.findByUserId(user.getId());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Title,Status,Priority,Due Date,Tags,Created At\n");
+        for (Task t : tasks) {
+            sb.append(csv(t.getTitle())).append(",");
+            sb.append(t.getStatus()).append(",");
+            sb.append(t.getPriority()).append(",");
+            sb.append(t.getDueDate() != null ? t.getDueDate().toLocalDate() : "").append(",");
+            sb.append(csv(t.getTags() != null ? t.getTags() : "")).append(",");
+            sb.append(t.getCreatedAt() != null ? t.getCreatedAt().toLocalDate() : "").append("\n");
+        }
+
+        return ResponseEntity.ok()
+            .header("Content-Type", "text/csv")
+            .header("Content-Disposition", "attachment; filename=taskflow-tasks.csv")
+            .body(sb.toString());
+    }
+
+    private String csv(String val) {
+        if (val == null) return "";
+        char q = '"';
+        if (val.indexOf(',') >= 0 || val.indexOf(q) >= 0 || val.indexOf('\n') >= 0)
+            return q + val.replace(String.valueOf(q), String.valueOf(q) + q) + q;
+        return val;
     }
 
     @DeleteMapping("/{taskId}/comments/{commentId}")

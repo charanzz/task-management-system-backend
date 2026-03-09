@@ -28,6 +28,10 @@ public class Task {
     private LocalDateTime updatedAt;
     private LocalDateTime completedAt;
 
+    // Tags (comma-separated e.g. "work,urgent,personal")
+    @Column(name = "tags", length = 500)
+    private String tags;
+
     // Recurring
     private Boolean recurring = false;
     private String recurringInterval; // DAILY | WEEKLY | MONTHLY
@@ -100,4 +104,6 @@ public class Task {
     public void setSubTasks(List<SubTask> s) { this.subTasks = s; }
     public List<TaskComment> getComments() { return comments; }
     public void setComments(List<TaskComment> c) { this.comments = c; }
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
 }
