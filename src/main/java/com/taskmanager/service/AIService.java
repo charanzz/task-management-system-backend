@@ -284,4 +284,27 @@ public class AIService {
             return "Great week " + user.getName() + "! Completed " + completed + " tasks. Keep the momentum! 🚀";
         }
     }
+
+    // ── Raw Claude call (returns plain string) ────────────
+    public String callClaudeRaw(String prompt) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-api-key", apiKey);
+            headers.set("anthropic-version", "2023-06-01");
+
+            Map<String,Object> body = new HashMap<>();
+            body.put("model", "claude-sonnet-4-20250514");
+            body.put("max_tokens", 500);
+            body.put("messages", List.of(Map.of("role","user","content", prompt)));
+
+            HttpEntity<Map<String,Object>> req = new HttpEntity<>(body, headers);
+            ResponseEntity<Map> resp = restTemplate.postForEntity(API_URL, req, Map.class);
+
+            List<Map<String,Object>> content = (List<Map<String,Object>>) resp.getBody().get("content");
+            return content.get(0).get("text").toString();
+        } catch(Exception e) {
+            return "{}";
+        }
+    }
 }

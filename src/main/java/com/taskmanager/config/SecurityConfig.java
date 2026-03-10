@@ -48,6 +48,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/users/register", "/api/users/login", "/api/users/test", "/api/users/test-email").permitAll()
                     .requestMatchers("/api/setup/**").permitAll()  // ← ADDED
                     .requestMatchers("/api/teams/join").permitAll() // ← invite link works without login
+                    .requestMatchers("/api/email-tasks/webhook").permitAll() // ← inbound email webhook
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .anyRequest().authenticated()
             )
