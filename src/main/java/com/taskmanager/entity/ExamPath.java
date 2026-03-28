@@ -1,7 +1,16 @@
 package com.taskmanager.entity;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
+
+import java.util.List;
 
 @Entity
 @Table(name = "exam_paths")
@@ -10,61 +19,66 @@ public class ExamPath {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
-    private String examType; // TNPSC_GROUP4, UPSC, CAT etc
-
-    @Column(nullable = false)
-    private String title; // "TNPSC Group 4"
-
+    private String title;
+    private String slug;
+    private String category;
     private String description;
-    private String bannerColor; // gradient color
-    private String icon; // emoji
-    private Integer totalTasks;
-    private Integer totalWeeks;
-    private Integer totalPhases;
-    private Boolean isActive; // is this path available to users
-    private String difficulty; // BEGINNER, INTERMEDIATE, ADVANCED
-    private String targetAudience; // "Class 12 Pass, Graduates"
-    private String examBody; // "TNPSC"
-    private String language; // "Tamil & English"
+    private String icon;
+    private String audience;
+    private String language;
+    private int totalWeeks;
+    private int totalTasks;
+    private boolean comingSoon;
 
-    private LocalDateTime createdAt;
+    @OneToMany(mappedBy = "examPath", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OrderBy("orderIndex ASC")
+    private List<ExamPhase> phases;
 
-    @PrePersist
-    public void prePersist() {
-        createdAt = LocalDateTime.now();
-        if (isActive == null) isActive = true;
-    }
+    public ExamPath() {}
 
-    // Getters and Setters
+    // Getters
     public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getExamType() { return examType; }
-    public void setExamType(String examType) { this.examType = examType; }
     public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public String getSlug() { return slug; }
+    public String getCategory() { return category; }
     public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public String getBannerColor() { return bannerColor; }
-    public void setBannerColor(String bannerColor) { this.bannerColor = bannerColor; }
     public String getIcon() { return icon; }
-    public void setIcon(String icon) { this.icon = icon; }
-    public Integer getTotalTasks() { return totalTasks; }
-    public void setTotalTasks(Integer totalTasks) { this.totalTasks = totalTasks; }
-    public Integer getTotalWeeks() { return totalWeeks; }
-    public void setTotalWeeks(Integer totalWeeks) { this.totalWeeks = totalWeeks; }
-    public Integer getTotalPhases() { return totalPhases; }
-    public void setTotalPhases(Integer totalPhases) { this.totalPhases = totalPhases; }
-    public Boolean getIsActive() { return isActive; }
-    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
-    public String getDifficulty() { return difficulty; }
-    public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
-    public String getTargetAudience() { return targetAudience; }
-    public void setTargetAudience(String targetAudience) { this.targetAudience = targetAudience; }
-    public String getExamBody() { return examBody; }
-    public void setExamBody(String examBody) { this.examBody = examBody; }
+    public String getAudience() { return audience; }
     public String getLanguage() { return language; }
+    public int getTotalWeeks() { return totalWeeks; }
+    public int getTotalTasks() { return totalTasks; }
+    public boolean isComingSoon() { return comingSoon; }
+    public List<ExamPhase> getPhases() { return phases; }
+
+    // Setters
+    public void setId(Long id) { this.id = id; }
+    public void setTitle(String title) { this.title = title; }
+    public void setSlug(String slug) { this.slug = slug; }
+    public void setCategory(String category) { this.category = category; }
+    public void setDescription(String description) { this.description = description; }
+    public void setIcon(String icon) { this.icon = icon; }
+    public void setAudience(String audience) { this.audience = audience; }
     public void setLanguage(String language) { this.language = language; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setTotalWeeks(int totalWeeks) { this.totalWeeks = totalWeeks; }
+    public void setTotalTasks(int totalTasks) { this.totalTasks = totalTasks; }
+    public void setComingSoon(boolean comingSoon) { this.comingSoon = comingSoon; }
+    public void setPhases(List<ExamPhase> phases) { this.phases = phases; }
+
+    // Builder
+    public static Builder builder() { return new Builder(); }
+
+    public static class Builder {
+        private final ExamPath o = new ExamPath();
+        public Builder title(String v)           { o.title = v; return this; }
+        public Builder slug(String v)            { o.slug = v; return this; }
+        public Builder category(String v)        { o.category = v; return this; }
+        public Builder description(String v)     { o.description = v; return this; }
+        public Builder icon(String v)            { o.icon = v; return this; }
+        public Builder audience(String v)        { o.audience = v; return this; }
+        public Builder language(String v)        { o.language = v; return this; }
+        public Builder totalWeeks(int v)         { o.totalWeeks = v; return this; }
+        public Builder totalTasks(int v)         { o.totalTasks = v; return this; }
+        public Builder comingSoon(boolean v)     { o.comingSoon = v; return this; }
+        public ExamPath build()                  { return o; }
+    }
 }
