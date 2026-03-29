@@ -32,7 +32,8 @@ public class ExamPhase {
     private int orderIndex;
     private int totalTopics;
 
-    @OneToMany(mappedBy = "phase", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // ── CHANGED: EAGER so topics load with phases ─────────────────────────
+    @OneToMany(mappedBy = "phase", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @OrderBy("orderIndex ASC")
     private List<ExamTopic> topics;
 

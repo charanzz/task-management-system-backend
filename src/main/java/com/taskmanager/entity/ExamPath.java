@@ -30,7 +30,8 @@ public class ExamPath {
     private int totalTasks;
     private boolean comingSoon;
 
-    @OneToMany(mappedBy = "examPath", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // ── CHANGED: EAGER so phases load with path ───────────────────────────
+    @OneToMany(mappedBy = "examPath", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @OrderBy("orderIndex ASC")
     private List<ExamPhase> phases;
 
